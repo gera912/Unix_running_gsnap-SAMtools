@@ -1,0 +1,237 @@
+---
+title: "gperez_Bi623_assign4"
+author: "Gera"
+date: "8/29/2019"
+output: html_document
+
+
+
+---
+
+This is an exercise using bash to explore RNA-seq data
+
+
+1. Copy or link these files to a working directory on Talapas.
+```{r engine = 'bash', eval = FALSE}
+scp /projects/bgmp/shared/Bi623/assign4/*.fastq.gz .
+```
+
+2.Using UNIX commands, determine and report the total number of read pairs from the files,   software’s “Chastity” filter.
+```{r engine = 'bash', eval = FALSE}
+/usr/bin/time -v  zcat PE_RNAseq_R1.fastq.gz |sed -n '1~4p' | wc -l
+10000000
+
+/usr/bin/time -v  zcat PE_RNAseq_R2.fastq.gz |sed -n '1~4p' | wc -l
+10000000
+```
+
+
+and the number of reads that failed the Illumina
+```{r engine = 'bash', eval = FALSE}
+/usr/bin/time -v  zcat PE_RNAseq_R1.fastq.gz |sed -n '1~4p' | grep ":Y:"| wc -l
+809609
+
+/usr/bin/time -v  zcat PE_RNAseq_R2.fastq.gz |sed -n '1~4p' | grep ":Y:"| wc -l
+809609
+
+```
+
+3. Again, using UNIX commands, generate a file containing all of the barcodes represented in the R1 file, and their abundances, in order from most to least abundant. You donʼt have to include the entire list in the document you turn in (the top 20 entries are fine), but make sure you report how many barcodes there are.
+
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz |sed -n '1~4p' | sed 's/:/\t/9g' |  cut -f 2| sort | uniq -c| cat| sort -rnk 1,1 >  PE_RNAseq_R1_most_2_least.txt
+
+head -20 PE_RNAseq_R1_most_2_least.txt
+4018067 CGATGT                          
+1071176 TGACCT
+ 980546 CAGATT
+ 888640 GTCCGT
+ 862571 AGTTCT
+ 759964 CCGTCT
+  64436 CCGCCT
+  48509 CAGCTT
+  42142 CCGACT
+  39385 AGCTCT
+  38547 AGATCT
+  35690 CAGACT
+  34640 TAACCT
+  33312 CGCTGT
+  32614 GCCCGT
+  30782 TTACCT
+  29319 GTCCCT
+  27504 CGATCT
+  27113 CGACCT
+  27035 TCACCT
+
+wc -l PE_RNAseq_R1_most_2_least.txt 
+2559 PE_RNAseq_R1_most_2_least.txt
+
+
+```
+
+a. What type of barcodes were used, and what length are they?
+
+*The type of barcodes are index style barcodes and the size length is 6.
+
+b. Assuming these multiplexed libraries were originally combined in nearly identical proportions, how many actual libraries are represented in the pool? Remember, barcodes are subject to sequencing error.
+
+```{r engine = 'bash', eval = FALSE}
+/usr/bin/time -v  zcat PE_RNAseq_R1.fastq.gz |sed -n '1~4p' | grep ":N:"| wc -l
+9190391
+
+/usr/bin/time -v  zcat PE_RNAseq_R2.fastq.gz |sed -n '1~4p' | grep ":N:"| wc -l
+9190391
+
+```
+
+
+c Did the person that prepped and pooled these libraries get even sequencing coverage across them?
+
+*From the output above we can see a drop off after the 6 barcode, 10 fold magnitude difference, from the descending *order to lowest count. After the top 6th high numbered barcodes are possibly error reads. The top 6
+*are not equally distrubuted, some have a 4 fold difference compared to the high read count which suggests uneven *sequence coverage.
+
+4. Since this sequencing library was constructed from fragmented RNA molecules, some of these molecules may even be shorter than the length of 1 mate from a paired-end read. When this occurs, the adaptor sequence adjacent to the original RNA sequence is sequenced along with the RNA itself. If this happens, here are the adaptor sequences expected to occur at the end of R1 and R2 reads, respectively:
+R1 adaptor sequence: AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC
+R2 adaptor sequence: AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT
+
+5. Using grep, determine if there is R1 adaptor sequence contamination, and R2 adaptor sequence contamination.
+Try executing grep with different subsets of the adaptor sequence (e.g. the 5’ and 3’ ends of each). Do you see variation in the number of matches? If so, describe what you see and why it makes sense.
+
+first 15 R1
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz |sed -n '2~4p' | grep "AGATCGGAAGAGCAC"| wc -l
+40054
+
+```
+
+last 15 R1
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz |sed -n '2~4p' | grep "CTGAACTCCAGTCAC" |wc -l
+21440
+
+```
+
+all R1
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz |sed -n '2~4p' | grep "AGATCGGAAGAGCACACGTCTGAACTCCAGTCAC" |wc -l
+9621
+
+```
+
+
+first 15 R2
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R2.fastq.gz |sed -n '2~4p' | grep "AGATCGGAAGAGCGT"| wc -l
+43305
+
+```
+
+last 15 R2
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R2.fastq.gz |sed -n '2~4p' | grep "GTAGGGAAAGAGTGT" |wc -l
+15891
+
+```
+
+all R2
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R2.fastq.gz |sed -n '2~4p' | grep "AGATCGGAAGAGCGTCGTGTAGGGAAAGAGTGT" |wc -l
+9399
+
+```
+
+
+*There are more reads in the first 15 nucleotides than the last 15 nucleotides for both R1 and R2 which can be a *result of the limitations of sequence read length. Also, there is less reads with the whole sequence adapter than the *last 15 nucleotide sequence. This can be a result from peppered errors in the 5' end sequence which result in less *reads. Also, this can be a cause from fragmentation. If the first half part of the sequence was manipulated to be *more flexible in matching we will see more reads. 
+
+b. What could happen during the assembly process if the adaptor sequence is present in the raw data?
+
+*This will result in adaptor contamination. Which will cause missed alignments and misleading increase of mismatches *when reads are mapped to genome.
+
+
+
+6. A common question with mRNA-Seq data is to what extent rRNA “carry-over” occurred during library prep. To answer this question, do the following:
+
+```{r engine = 'bash', eval = FALSE}
+#!/bin/bash
+
+#SBATCH --account=bgmp
+#SBATCH --partition=bgmp
+#SBATCH --job-name=Assign_4
+#SBATCH --output=slurm-%j-%x.out
+
+#SBATCH --time=0-01:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=7
+
+ml easybuild intel/2017a GMAP-GSNAP/2017-06-20
+
+/usr/bin/time -v gmap_build -D /projects/bgmp/gperez8/projects/bgmp/gperez8/Bi623/Ex4/ -d gmap_build -k 15 Gacu_rRNA.fasta
+
+
+```
+
+
+```{r engine = 'bash', eval = FALSE}
+#!/bin/bash
+
+#SBATCH --account=bgmp
+#SBATCH --partition=bgmp
+#SBATCH --job-name=Assign_4
+#SBATCH --output=slurm-%j-%x.out
+
+#SBATCH --time=0-01:00:00
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=1
+#SBATCH --cpus-per-task=7
+
+ml easybuild intel/2017a GMAP-GSNAP/2017-06-20
+
+/usr/bin/time -v gsnap -D /projects/bgmp/gperez8/projects/bgmp/gperez8/Bi623/Ex4/gmap_build -d gmap_build --gunzip -m 20 -t 28 -O --split-output /projects/bgmp/gperez8/projects/bgmp/gperez8/Bi623/Ex4/gsnap_alig -A sam PE_RNAseq_R1.fastq.gz
+```
+
+e. Using the SAM output files, find out what proportion of the total reads are likely from rRNA. Consider a read of rRNA origin if it aligns to the rRNA reference in any capacity (e.g. multiply, uniquely, translocally, etc.).
+
+```{r engine = 'bash', eval = FALSE}
+grep "HWI"  gsnap_alig.nomapping | wc -l 
+9934495
+```
+
+*Total reads - nomapping to rRNA = reads likely from rRNA.
+*10000000 - 9934495 = 65505 reads likely from rRNA
+
+
+7. Find out approximately what proportion of the R1 reads contains a piece of a poly-A tail. Use regular expressions (e.g. with grep) to accomplish this. Assume that anything composed of at least 15 consecutive “A”s is likely a poly-A tail.
+
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz| grep -E "[A]{15}" | wc -l
+39981
+```
+
+8. Also run your script to count occurrences of 15 or more consecutive “C”s, “G”s, and “T”s and print their frequencies. Explain why the observed frequencies do or do not make sense, given what you know about this type of RNA-seq data.
+
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz| grep -E "[C]{15}" | wc -l
+4736
+```
+
+
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz| grep -E "[G]{15}" | wc -l
+2523
+```
+
+
+```{r engine = 'bash', eval = FALSE}
+zcat PE_RNAseq_R1.fastq.gz| grep -E "[T]{15}" | wc -l
+32851
+```
+
+
+*The result is what we expected. We saw more frequency of the 15 A' than C, G, T. This is a result of the mRNA
+*having the poly-A tail. We also saw more frequencies of T's  than C and G which the T's are a result of the poly-A *complement sequence.
+
+
+
+
+
